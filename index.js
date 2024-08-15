@@ -1,10 +1,11 @@
 const express = require("express");
 const { createToDo } = require("./types");
+const { todo } = require("./db");
 const app = express();
 
 app.use(express.json());
 
-app.post("/todo", function (req, res) {
+app.post("/todo", async function (req, res) {
   const createPayLoad = req.body;
   const safeParsed = createToDo.safeParse(createPayLoad);
   if (!safeParsed.success) {
@@ -14,11 +15,24 @@ app.post("/todo", function (req, res) {
     return;
   }
   // put it in mongoDB
+  await todo.create({
+    title: createPayLoad.title,
+    description: createPayLoad.description,
+    completed: false,
+  });
+  res.json({
+    msg: "Todo created",
+  });
 });
 
-app.get("/todo", function (req, res) {});
+app.get("/todo", async function (req, res) {
+  const todos = await todo.find({});
+  res.json({
+    todos,
+  });
+});
 
-app.put("/completed", function (req, res) {
+app.put("/completed", async function (req, res) {
   const updateToDo = req.body;
   const safeParsed = updateToDo.safeParse(updateToDo);
   if (!safeParsed.success) {
@@ -28,4 +42,14 @@ app.put("/completed", function (req, res) {
     return;
   }
   //update todo in mongoDB
+
+  await todo.update(
+    {
+      _id: req.body.id,
+    },
+    { completed: true }
+  );
+  res.json({
+    msg: "todo updated",
+  });
 });
